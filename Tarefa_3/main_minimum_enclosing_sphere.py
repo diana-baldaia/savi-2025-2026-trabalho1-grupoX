@@ -254,15 +254,15 @@ def main():
     # 1) CARREGAMENTO (OpenCV) + FILTRAGEM DE PROFUNDIDADE
     # =========================================================
     # Imagem 1 (RGB, Depth)
-    rgb1_cv  = cv2.cvtColor(cv2.imread("rgb/1.png", cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
-    depth1   = cv2.imread("depth/1 .png", cv2.IMREAD_UNCHANGED)  # Não alterar o número de bits (PNG de 16 bits)
+    rgb1_cv  = cv2.cvtColor(cv2.imread("tum_dataset/rgb/1.png", cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+    depth1   = cv2.imread("tum_dataset/depth/1.png", cv2.IMREAD_UNCHANGED)  # Não alterar o número de bits (PNG de 16 bits)
     depth1   = cv2.medianBlur(depth1, 5)                                    # Filtro de mediana para reduzir ruído, compara cada píxel com a vizinhança numa matriz 5x5
     depth1_m = depth1.astype(np.float32) / 5000.0                           # uint16 para float32 e de milímetros para metros (Fator de escala assumido:5000)
     depth1_m[(depth1_m < 0.1) | (depth1_m > 3.0)] = 0.0                     # Remove valores de profundidade inválidos (< 0.1m ou > 3.0m), '|' é o operador 'ou' em numpy
 
     # Imagem 2 (RGB, Depth)
-    rgb2_cv  = cv2.cvtColor(cv2.imread("rgb/2.png", cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
-    depth2   = cv2.imread("depth/2.png", cv2.IMREAD_UNCHANGED)
+    rgb2_cv  = cv2.cvtColor(cv2.imread("tum_dataset/rgb/2.png", cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+    depth2   = cv2.imread("tum_dataset/depth/2.png", cv2.IMREAD_UNCHANGED)
     depth2   = cv2.medianBlur(depth2, 5)
     depth2_m = depth2.astype(np.float32) / 5000.0
     depth2_m[(depth2_m < 0.1) | (depth2_m > 3.0)] = 0.0

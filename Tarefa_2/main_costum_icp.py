@@ -5,6 +5,10 @@ from copy import deepcopy
 from scipy.optimize import least_squares
 
 
+# Para não imprimir cada iteração:
+# Comentar linhas 102 a 125 e 181 a 187
+# Descomentar linhas 247 a 257 e 280 a 289
+
 view = {
 	"class_name" : "ViewTrajectory",
 	"interval" : 29,
@@ -95,6 +99,34 @@ def custom_icp(source_cloud, target_cloud, initial_transform, max_correspondence
     # Para o alvo não é necessário atualizar a KDTree, pois o alvo permanece fixo
     target_kdtree = o3d.geometry.KDTreeFlann(target_cloud)
 
+
+    # --- Configuração do Visualizador para a Animação ---
+    vis = o3d.visualization.Visualizer()
+    vis.create_window(window_name='ICP Animation', width=800, height=600)
+    
+    # Adiciona as nuvens de pontos (fonte e alvo) ao visualizador
+    # A nuvem alvo (azul) permanece estática
+    target_cloud.paint_uniform_color([0, 0, 1]) # alvo: azul
+    vis.add_geometry(target_cloud)
+    
+    # A nuvem fonte (vermelha inicialmente) será atualizada
+    current_source_cloud.paint_uniform_color([1, 0, 0]) # fonte: vermelho
+    vis.add_geometry(current_source_cloud)
+
+    # Adiciona e configura o frame de coordenadas
+    axes = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.5)
+    vis.add_geometry(axes)
+
+    # Configura a câmara do visualizador com a vista pré-definida
+    ctr = vis.get_view_control()
+    ctr.set_front(view['trajectory'][0]['front'])
+    ctr.set_lookat(view['trajectory'][0]['lookat'])
+    ctr.set_up(view['trajectory'][0]['up'])
+    ctr.set_zoom(view['trajectory'][0]['zoom'])
+    vis.update_renderer()
+
+
+
     for i in range(max_iterations):
         print(f"Iteração {i+1}/{max_iterations}")
 
@@ -146,6 +178,14 @@ def custom_icp(source_cloud, target_cloud, initial_transform, max_correspondence
         # --- Aplicação da Transformação ---
         current_source_cloud.transform(incremental_transform_matrix)                # Aplica a transformação incremental à fonte atual para a próxima iteração
         total_transformation = incremental_transform_matrix @ total_transformation  # Acumula a transformação
+
+        # --- Atualização do Visualizador para Animação ---
+        # A nuvem de pontos 'current_source_cloud' já foi transformada.
+        vis.update_geometry(current_source_cloud)
+        vis.poll_events()
+        vis.update_renderer()
+        
+    vis.destroy_window()        # Fecha o visualizador no final
 
     return current_source_cloud, total_transformation
 
@@ -204,17 +244,18 @@ def main():
     pcd1_ds, _ = pcd1_ds.remove_statistical_outlier(nb_neighbors=20, std_ratio=1.5)
     pcd2_ds, _ = pcd2_ds.remove_statistical_outlier(nb_neighbors=20, std_ratio=1.5)
 
-    # Visualização ANTES (fonte vermelha, alvo azul)
-    axes = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.5)
-    pcd1_ds.paint_uniform_color([1, 0, 0])  # fonte: vermelho
-    pcd2_ds.paint_uniform_color([0, 0, 1])  # alvo: azul
-    o3d.visualization.draw_geometries(
-        [pcd1_ds, pcd2_ds, axes],
-        front=view['trajectory'][0]['front'],
-        lookat=view['trajectory'][0]['lookat'],
-        up=view['trajectory'][0]['up'],
-        zoom=view['trajectory'][0]['zoom'],
-    )
+
+    # # Visualização ANTES (fonte vermelha, alvo azul)
+    # axes = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.5)
+    # pcd1_ds.paint_uniform_color([1, 0, 0])  # fonte: vermelho
+    # pcd2_ds.paint_uniform_color([0, 0, 1])  # alvo: azul
+    # o3d.visualization.draw_geometries(
+    #     [pcd1_ds, pcd2_ds, axes],
+    #     front=view['trajectory'][0]['front'],
+    #     lookat=view['trajectory'][0]['lookat'],
+    #     up=view['trajectory'][0]['up'],
+    #     zoom=view['trajectory'][0]['zoom'],
+    # )
 
 
     # =========================================================
@@ -237,16 +278,16 @@ def main():
 
 
     if registered_source_cloud is not None:
-        # Visualização DEPOIS (fonte registada verde, alvo azul)
-        registered_source_cloud.paint_uniform_color([0, 1, 0]) # Fonte registada: verde
-        print("Visualizando nuvens de pontos DEPOIS do registo ICP...")
-        o3d.visualization.draw_geometries(
-            [registered_source_cloud, pcd2_ds, axes],
-            front=view['trajectory'][0]['front'],
-            lookat=view['trajectory'][0]['lookat'],
-            up=view['trajectory'][0]['up'],
-            zoom=view['trajectory'][0]['zoom'],
-        )
+        # # Visualização DEPOIS (fonte registada verde, alvo azul)
+        # registered_source_cloud.paint_uniform_color([0, 1, 0]) # Fonte registada: verde
+        # print("Visualizando nuvens de pontos DEPOIS do registo ICP...")
+        # o3d.visualization.draw_geometries(
+        #     [registered_source_cloud, pcd2_ds, axes],
+        #     front=view['trajectory'][0]['front'],
+        #     lookat=view['trajectory'][0]['lookat'],
+        #     up=view['trajectory'][0]['up'],
+        #     zoom=view['trajectory'][0]['zoom'],
+        # )
 
         print("\nMatriz de transformação final:")
         print(final_transformation)
